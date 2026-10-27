@@ -2,6 +2,17 @@
 
 Frontend for Documents AI, built with React 19, React Router, Vite and Vitest.
 
+## Setup
+
+Use Node.js 22.22.2 or newer in the 22.x series, 24.15.0 or newer in the 24.x
+series, or 26.0.0 and newer. These versions match the current test dependencies.
+Check your version with `node --version`.
+
+```bash
+npm install
+npm run dev
+```
+
 ## Scripts
 
 | Command              | What it does                        |
