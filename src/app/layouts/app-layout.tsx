@@ -1,14 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { paths } from '../../common/config/paths.ts'
 
-function App() {
+export function AppLayout() {
   return (
     <>
       <header className="app-header">
         <strong>Documents AI</strong>
         <nav>
-          <NavLink to="/" end>
-            Home
-          </NavLink>
+          <NavLink to={paths.chat}>Chat</NavLink>
+          <NavLink to={paths.ingestion}>Ingestion</NavLink>
         </nav>
       </header>
       <main>
@@ -17,5 +17,3 @@ function App() {
     </>
   )
 }
-
-export default App
