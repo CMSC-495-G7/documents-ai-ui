@@ -13,8 +13,8 @@ dist-ssr
 *.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
+*.code-workspace
 .idea
 .DS_Store
 *.suo
@@ -25,3 +25,7 @@ dist-ssr
 
 # Misc
 designs
+
+# AI coding tools
+.claude/
+.codex/
