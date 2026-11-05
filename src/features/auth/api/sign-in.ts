@@ -1,9 +1,15 @@
-export type SignInRequest = {
-  email: string
-  password: string
-}
+import { apiRequest } from '../../../common/api/http-client.ts';
+import type { Tokens } from '../../../common/api/token-storage.ts';
 
-// Placeholder until the API has a sign-in endpoint
-export async function signIn(request: SignInRequest): Promise<void> {
-  void request
+export type SignInRequest = {
+  email: string;
+  password: string;
+};
+
+export function signIn(request: SignInRequest) {
+  return apiRequest<Tokens>('/api/auth/login', {
+    method: 'POST',
+    body: request,
+    auth: false,
+  });
 }

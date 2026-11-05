@@ -67,6 +67,37 @@ a {
   text-decoration: underline;
 }
 
+.app-header-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.app-header-role {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.app-header-user button {
+  font: inherit;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+}
+
+.auth-loading {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
 main {
   padding: 1.5rem;
 }

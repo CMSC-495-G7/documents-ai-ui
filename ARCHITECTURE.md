@@ -100,7 +100,7 @@ export const routes: RouteObject[] = [
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-]
+];
 ```
 
 If the main router grows a screen, a form, or a query, that code belongs in a feature.
@@ -135,7 +135,7 @@ path. So `chat-routes.tsx` says `{ index: true }` for `/chat`, and a future
 // src/features/chat/chat-routes.tsx
 export const chatRoutes: RouteObject[] = [
   { index: true, element: <ChatPage /> },
-]
+];
 ```
 
 Rules for sub-routers:

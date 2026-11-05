@@ -207,6 +207,11 @@
   background: #003f7e;
 }
 
+.login-primary:disabled {
+  background: #5b84b1;
+  cursor: progress;
+}
+
 .login-primary:focus-visible,
 .login-toggle:focus-visible {
   outline: 3px solid rgba(0, 76, 151, 0.35);
