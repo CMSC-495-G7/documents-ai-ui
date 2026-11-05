@@ -4,4 +4,4 @@ export const paths = {
   login: '/login',
   chat: '/chat',
   ingestion: '/ingestion',
-} as const
+} as const;
