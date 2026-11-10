@@ -25,7 +25,11 @@ export const routes: RouteObject[] = [
             element: <RequireRole role="admin" fallback={<NotAllowedPage />} />,
             children: [{ path: paths.ingestion, children: ingestionRoutes }],
           },
-          { path: '*', element: <NotFoundPage /> },
+          {
+            path: '*',
+            element: <NotFoundPage />,
+            handle: { crumb: 'Page not found' },
+          },
         ],
       },
     ],

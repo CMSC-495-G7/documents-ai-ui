@@ -18,6 +18,8 @@ type RequestOptions = {
   body?: unknown;
   // false for public endpoints (login)
   auth?: boolean;
+  // Uploads only. Called with 0-100 while the body is sent.
+  onUploadProgress?: (percent: number) => void;
 };
 
 const expiredListeners = new Set<() => void>();
@@ -68,7 +70,8 @@ async function send(
   token: string | null,
 ) {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  let body: BodyInit | undefined;
+  // Only these two, both fetch and XHR can send them.
+  let body: FormData | string | undefined;
 
   // Let the browser set the content type for FormData (uploads).
   if (options.body instanceof FormData) {
@@ -81,15 +84,55 @@ async function send(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  try {
-    return await fetch(path, {
-      method: options.method ?? 'GET',
+  const method = options.method ?? 'GET';
+  if (options.onUploadProgress) {
+    return sendWithProgress(
+      path,
+      method,
       headers,
       body,
-    });
+      options.onUploadProgress,
+    );
+  }
+
+  try {
+    return await fetch(path, { method, headers, body });
   } catch {
     throw new ApiError(0, 'Could not reach the server.');
   }
+}
+
+// fetch can't report upload progress, XMLHttpRequest can.
+function sendWithProgress(
+  path: string,
+  method: string,
+  headers: Record<string, string>,
+  body: FormData | string | undefined,
+  onProgress: (percent: number) => void,
+) {
+  return new Promise<Response>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, path);
+    for (const [name, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(name, value);
+    }
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    // Same Response object fetch gives, so the rest of apiRequest doesn't care.
+    xhr.onload = () =>
+      resolve(
+        new Response(xhr.responseText || null, {
+          status: xhr.status,
+          statusText: xhr.statusText,
+        }),
+      );
+    xhr.onerror = () => reject(new ApiError(0, 'Could not reach the server.'));
+    xhr.onabort = xhr.onerror;
+    xhr.send(body ?? null);
+  });
 }
 
 function refreshAccessToken(): Promise<string | null> {

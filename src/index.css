@@ -1,103 +1,25 @@
+@import 'tailwindcss';
+@import '@radixp0int/ai-chat-kit/brand/tokens.css';
+@import '@radixp0int/ai-chat-kit/styles.css';
+
+/* Older page css uses these names, so point them at the kit tokens. */
 :root {
-  --text: #3f3a45;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --accent: #aa3bff;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-
-  font: 16px/1.5 var(--sans);
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --text: var(--ink);
+  --text-h: var(--ink-strong);
+  --bg: var(--canvas);
+  --border: var(--line);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #c4c7cf;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --accent: #c084fc;
+@layer base {
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
   }
-}
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2,
-h3 {
-  color: var(--text-h);
-}
-
-a {
-  color: var(--accent);
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.app-header nav {
-  display: flex;
-  gap: 1rem;
-}
-
-.app-header a {
-  text-decoration: none;
-}
-
-.app-header a.active {
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.app-header-user {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-}
-
-.app-header-role {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0 0.5rem;
-  font-size: 0.75rem;
-  text-transform: capitalize;
-}
-
-.app-header-user button {
-  font: inherit;
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.25rem 0.75rem;
-  cursor: pointer;
-}
-
-.auth-loading {
-  padding: 3rem 1.5rem;
-  text-align: center;
-}
-
-main {
-  padding: 1.5rem;
+  h2,
+  h3 {
+    color: var(--ink-strong);
+  }
 }

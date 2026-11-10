@@ -1,0 +1,71 @@
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.upload-dropzone[data-dragging='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.upload-dropzone[data-disabled='true'] {
+  opacity: 0.6;
+}
+
+.upload-dropzone p {
+  margin: 0;
+}
+
+.upload-dropzone-icon {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.upload-dropzone-title {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.upload-dropzone-button {
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.35rem 1rem;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-dropzone-button[data-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.upload-dropzone-button:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Hidden but still focusable, the label is what people see and click. */
+.upload-dropzone-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.upload-dropzone-hint {
+  font-size: 0.85rem;
+}
