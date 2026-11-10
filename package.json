@@ -19,11 +19,13 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@radixp0int/ai-chat-kit": "^0.1.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -37,6 +39,7 @@
     "lint-staged": "^17.6.0",
     "oxlint": "^1.88.0",
     "prettier": "^3.9.10",
+    "tailwindcss": "^4.3.4",
     "typescript": "~6.0.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"

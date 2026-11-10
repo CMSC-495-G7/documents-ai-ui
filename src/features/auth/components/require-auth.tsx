@@ -9,7 +9,7 @@ export function RequireAuth() {
 
   if (status === 'loading') {
     return (
-      <p role="status" className="auth-loading">
+      <p role="status" className="p-12 text-center text-ink-soft">
         Loading…
       </p>
     );

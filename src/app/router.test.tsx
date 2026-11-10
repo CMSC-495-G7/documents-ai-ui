@@ -11,6 +11,8 @@ import { mockApi } from '../testing/mock-api.ts';
 import { renderWithRouter } from '../testing/render-with-router.tsx';
 import { routes } from './router.tsx';
 
+const noDocuments = { 'GET /api/documents': { status: 200, body: [] } };
+
 describe('main router', () => {
   it('redirects / to /login when signed out', () => {
     const router = renderWithRouter(routes, '/');
@@ -40,11 +42,13 @@ describe('main router', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Chat' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Apps' }),
+    ).toBeInTheDocument();
   });
 
   it('lets admins open ingestion', async () => {
-    signedInAs(adminUser);
+    signedInAs(adminUser, noDocuments);
     renderWithRouter(routes, '/ingestion');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ingestion' }),
@@ -58,7 +62,7 @@ describe('main router', () => {
       await screen.findByRole('heading', { level: 1, name: 'Not allowed' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: 'Ingestion' }),
+      screen.queryByRole('link', { name: 'Upload' }),
     ).not.toBeInTheDocument();
   });
 
@@ -69,6 +73,7 @@ describe('main router', () => {
         body: { access: 'a', refresh: 'r' },
       },
       'GET /api/auth/me': { status: 200, body: adminUser },
+      ...noDocuments,
     });
     const router = renderWithRouter(routes, '/ingestion');
     expect(router.state.location.pathname).toBe('/login');
@@ -81,12 +86,10 @@ describe('main router', () => {
     expect(router.state.location.pathname).toBe(paths.ingestion);
   });
 
-  it('navigates between features from the nav', async () => {
-    signedInAs(adminUser);
+  it('navigates between features from the side menu', async () => {
+    signedInAs(adminUser, noDocuments);
     const router = renderWithRouter(routes, '/chat');
-    await userEvent.click(
-      await screen.findByRole('link', { name: 'Ingestion' }),
-    );
+    await userEvent.click(await screen.findByRole('link', { name: 'Upload' }));
     expect(router.state.location.pathname).toBe('/ingestion');
   });
 

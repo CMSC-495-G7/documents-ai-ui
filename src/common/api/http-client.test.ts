@@ -92,3 +92,57 @@ describe('apiRequest', () => {
     });
   });
 });
+
+describe('apiRequest with upload progress', () => {
+  function upload(onUploadProgress: (percent: number) => void) {
+    return apiRequest('/api/files', {
+      method: 'POST',
+      body: new FormData(),
+      onUploadProgress,
+    });
+  }
+
+  it('reports progress and returns the reply', async () => {
+    tokenStorage.set({ access: 'a1', refresh: 'r1' });
+    const fetchMock = mockApi({
+      'POST /api/files': { status: 201, body: { id: 7 } },
+    });
+    const progress: number[] = [];
+
+    await expect(upload((percent) => progress.push(percent))).resolves.toEqual({
+      id: 7,
+    });
+    expect(progress).toEqual([50, 100]);
+    expect(headersOf(fetchMock, 0).Authorization).toBe('Bearer a1');
+    expect(headersOf(fetchMock, 0)['Content-Type']).toBeUndefined();
+  });
+
+  it('uses the API detail as the error message', async () => {
+    mockApi({
+      'POST /api/files': { status: 413, body: { detail: 'Too big.' } },
+    });
+    await expect(upload(() => {})).rejects.toMatchObject({
+      status: 413,
+      message: 'Too big.',
+    });
+  });
+
+  it('refreshes once on 401 and sends the upload again', async () => {
+    tokenStorage.set({ access: 'old', refresh: 'r1' });
+    const fetchMock = mockApi({
+      'POST /api/files': (init) =>
+        (init.headers as Record<string, string>).Authorization === 'Bearer new'
+          ? { status: 201, body: 'ok' }
+          : unauthorized,
+      'POST /api/auth/refresh': { status: 200, body: { access: 'new' } },
+    });
+
+    await expect(upload(() => {})).resolves.toBe('ok');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses status 0 when the server cannot be reached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await expect(upload(() => {})).rejects.toMatchObject({ status: 0 });
+  });
+});

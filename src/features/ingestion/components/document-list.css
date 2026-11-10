@@ -1,0 +1,58 @@
+.document-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.document-list th,
+.document-list td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.document-list th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.document-list-empty {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.document-list-error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.status-badge[data-status='queued'] {
+  color: #6b7280;
+}
+
+.status-badge[data-status='processing'] {
+  color: #b45309;
+}
+
+.status-badge[data-status='ready'] {
+  color: #15803d;
+}
+
+.status-badge[data-status='failed'] {
+  color: #b91c1c;
+}
