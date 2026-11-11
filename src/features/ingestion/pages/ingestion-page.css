@@ -59,3 +59,9 @@
   padding: 0 0.6rem;
   cursor: pointer;
 }
+
+.document-refresh-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
