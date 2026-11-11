@@ -4,8 +4,10 @@ import { listDocuments } from '../api/list-documents.ts';
 import { uploadDocument } from '../api/upload-document.ts';
 import { DocumentList } from '../components/document-list.tsx';
 import { UploadDropzone } from '../components/upload-dropzone.tsx';
+import { useDocumentRefresh } from '../hooks/use-document-refresh.ts';
 import type { DocumentItem } from '../types.ts';
 import { checkFile } from '../utils/check-file.ts';
+import { hasPendingDocuments } from '../utils/has-pending-documents.ts';
 import './ingestion-page.css';
 
 const UPLOAD_FAILED =
@@ -36,6 +38,8 @@ export function IngestionPage() {
       cancelled = true;
     };
   }, []);
+
+  useDocumentRefresh(documents, setDocuments);
 
   function retryList() {
     setListFailed(false);
@@ -103,7 +107,14 @@ export function IngestionPage() {
       ) : documents === null ? (
         <p>Loading documents…</p>
       ) : (
-        <DocumentList documents={documents} />
+        <>
+          {hasPendingDocuments(documents) && (
+            <p className="document-refresh-note">
+              Statuses update on their own while files are processed.
+            </p>
+          )}
+          <DocumentList documents={documents} />
+        </>
       )}
     </section>
   );

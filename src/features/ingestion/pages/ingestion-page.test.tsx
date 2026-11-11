@@ -1,11 +1,20 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { paths } from '../../../common/config/paths.ts';
 import { adminUser, signedInAs } from '../../../testing/auth-fixtures.ts';
 import { fileOf, makeDocument } from '../../../testing/document-fixtures.ts';
-import { jsonResponse } from '../../../testing/mock-api.ts';
+import { jsonResponse, type mockApi } from '../../../testing/mock-api.ts';
 import { renderWithRouter } from '../../../testing/render-with-router.tsx';
+import { REFRESH_INTERVAL_MS } from '../hooks/use-document-refresh.ts';
+import type { DocumentItem } from '../types.ts';
 import { ingestionRoutes } from '../ingestion-routes.tsx';
 
 const handbook = makeDocument({ id: 1, title: 'Handbook' });
@@ -178,5 +187,154 @@ describe('IngestionPage', () => {
         fetchMock.mock.calls.some(([, init]) => init?.method === 'POST'),
       ).toBe(false),
     );
+  });
+});
+
+describe('IngestionPage status refresh', () => {
+  beforeEach(() => {
+    // Fake clock we can jump forward. It still ticks, so findBy works.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Each GET gets the next answer. The last one repeats.
+  function listAnswers(...answers: (DocumentItem[] | 'error')[]) {
+    let call = 0;
+    return () => {
+      const answer = answers[Math.min(call, answers.length - 1)];
+      call += 1;
+      return answer === 'error'
+        ? { status: 500 }
+        : { status: 200, body: answer };
+    };
+  }
+
+  function listCalls(fetchMock: ReturnType<typeof mockApi>) {
+    return fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        url === '/api/documents' && (init?.method ?? 'GET') === 'GET',
+    ).length;
+  }
+
+  function waitOneRefresh() {
+    return act(() => vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS));
+  }
+
+  function statusOf(title: string) {
+    const table = screen.getByRole('table', { name: 'Documents' });
+    const row = within(table).getByRole('row', { name: new RegExp(title) });
+    return within(row).getAllByRole('cell')[3].textContent;
+  }
+
+  it('updates statuses until every document is done', async () => {
+    const fetchMock = signedInAs(adminUser, {
+      'GET /api/documents': listAnswers(
+        [makeDocument({ title: 'Handbook', status: 'queued' })],
+        [makeDocument({ title: 'Handbook', status: 'processing' })],
+        [makeDocument({ title: 'Handbook', status: 'ready' })],
+      ),
+    });
+    renderPage();
+    await screen.findByRole('table', { name: 'Documents' });
+    expect(statusOf('Handbook')).toBe('Queued');
+
+    await waitOneRefresh();
+    expect(statusOf('Handbook')).toBe('Processing');
+
+    await waitOneRefresh();
+    expect(statusOf('Handbook')).toBe('Ready');
+    expect(listCalls(fetchMock)).toBe(3);
+
+    // Nothing left to wait for, so no more requests.
+    await waitOneRefresh();
+    await waitOneRefresh();
+    expect(listCalls(fetchMock)).toBe(3);
+  });
+
+  it('does not refresh when everything is already done', async () => {
+    const fetchMock = signedInAs(adminUser, {
+      'GET /api/documents': {
+        status: 200,
+        body: [makeDocument({ status: 'ready' })],
+      },
+    });
+    renderPage();
+    await screen.findByRole('table', { name: 'Documents' });
+
+    await waitOneRefresh();
+    await waitOneRefresh();
+    expect(listCalls(fetchMock)).toBe(1);
+    expect(
+      screen.queryByText(/statuses update on their own/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('says statuses update on their own while something is processing', async () => {
+    signedInAs(adminUser, {
+      'GET /api/documents': {
+        status: 200,
+        body: [makeDocument({ status: 'processing' })],
+      },
+    });
+    renderPage();
+    expect(
+      await screen.findByText(/statuses update on their own/i),
+    ).toBeInTheDocument();
+  });
+
+  it('starts refreshing after an upload', async () => {
+    const uploaded = makeDocument({ id: 3, title: 'Security policy' });
+    const fetchMock = signedInAs(adminUser, {
+      'GET /api/documents': listAnswers([], [{ ...uploaded, status: 'ready' }]),
+      'POST /api/documents': { status: 201, body: uploaded },
+    });
+    renderPage();
+    await listLoaded();
+
+    await pickFile(fileOf('Security policy.pdf'));
+    await screen.findByRole('table', { name: 'Documents' });
+    expect(statusOf('Security policy')).toBe('Queued');
+
+    await waitOneRefresh();
+    expect(statusOf('Security policy')).toBe('Ready');
+    expect(listCalls(fetchMock)).toBe(2);
+  });
+
+  it('stops asking after you leave the page', async () => {
+    const fetchMock = signedInAs(adminUser, {
+      'GET /api/documents': {
+        status: 200,
+        body: [makeDocument({ status: 'queued' })],
+      },
+    });
+    renderPage();
+    await screen.findByRole('table', { name: 'Documents' });
+
+    cleanup();
+    await waitOneRefresh();
+    await waitOneRefresh();
+    expect(listCalls(fetchMock)).toBe(1);
+  });
+
+  it('keeps the list and tries again when a refresh fails', async () => {
+    signedInAs(adminUser, {
+      'GET /api/documents': listAnswers(
+        [makeDocument({ title: 'Handbook', status: 'processing' })],
+        'error',
+        [makeDocument({ title: 'Handbook', status: 'ready' })],
+      ),
+    });
+    renderPage();
+    await screen.findByRole('table', { name: 'Documents' });
+
+    await waitOneRefresh();
+    expect(statusOf('Handbook')).toBe('Processing');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await waitOneRefresh();
+    expect(statusOf('Handbook')).toBe('Ready');
   });
 });
