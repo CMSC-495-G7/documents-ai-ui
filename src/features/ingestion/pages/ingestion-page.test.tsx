@@ -190,6 +190,70 @@ describe('IngestionPage', () => {
   });
 });
 
+describe('IngestionPage delete', () => {
+  async function deleteHandbook() {
+    await screen.findByRole('table', { name: 'Documents' });
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete Handbook' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Yes' }));
+  }
+
+  it('deletes a document and takes it off the list', async () => {
+    const fetchMock = signedInAs(adminUser, {
+      'GET /api/documents': { status: 200, body: [benefits, handbook] },
+      'DELETE /api/documents/1': { status: 204 },
+    });
+    renderPage();
+
+    await deleteHandbook();
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Handbook deleted.',
+    );
+    expect(documentTitles()).toEqual(['Benefits']);
+    expect(
+      fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE'),
+    ).toBe(true);
+  });
+
+  it('takes it off the list if it was already deleted', async () => {
+    signedInAs(adminUser, {
+      'GET /api/documents': { status: 200, body: [benefits, handbook] },
+      'DELETE /api/documents/1': {
+        status: 404,
+        body: { detail: 'Document not found.' },
+      },
+    });
+    renderPage();
+
+    await deleteHandbook();
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Handbook deleted.',
+    );
+    expect(documentTitles()).toEqual(['Benefits']);
+  });
+
+  it('keeps the document and says so when the delete fails', async () => {
+    signedInAs(adminUser, {
+      'GET /api/documents': { status: 200, body: [benefits, handbook] },
+      'DELETE /api/documents/1': { status: 500 },
+    });
+    renderPage();
+
+    await deleteHandbook();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "Couldn't delete Handbook. Try again.",
+    );
+    expect(documentTitles()).toEqual(['Benefits', 'Handbook']);
+    expect(
+      screen.getByRole('button', { name: 'Delete Handbook' }),
+    ).toBeEnabled();
+  });
+});
+
 describe('IngestionPage status refresh', () => {
   beforeEach(() => {
     // Fake clock we can jump forward. It still ticks, so findBy works.

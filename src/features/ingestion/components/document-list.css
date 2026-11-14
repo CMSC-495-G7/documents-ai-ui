@@ -32,6 +32,10 @@
   color: #b91c1c;
 }
 
+.document-list-actions {
+  white-space: nowrap;
+}
+
 .status-badge {
   display: inline-block;
   border-radius: 999px;
