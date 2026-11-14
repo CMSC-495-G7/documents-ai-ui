@@ -82,7 +82,7 @@ export function IngestionPage() {
     } catch (error) {
       // 404 = someone else already deleted it, so it's gone either way
       if (!(error instanceof ApiError && error.status === 404)) {
-        setRemoval({ state: 'error', title: document.title });
+        handleDeleteError(document);
         return;
       }
     }
@@ -90,6 +90,10 @@ export function IngestionPage() {
       (current ?? []).filter((item) => item.id !== document.id),
     );
     setRemoval({ state: 'done', title: document.title });
+  }
+
+  function handleDeleteError(document: DocumentItem) {
+    setRemoval({ state: 'error', title: document.title });
   }
 
   return (
@@ -151,6 +155,7 @@ export function IngestionPage() {
           <DocumentList
             documents={documents}
             onDelete={handleDelete}
+            onDeleteError={handleDeleteError}
             deletingId={removal.state === 'deleting' ? removal.id : null}
           />
         </>

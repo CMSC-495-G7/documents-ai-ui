@@ -18,7 +18,8 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
 
 type DocumentListProps = {
   documents: DocumentItem[];
-  onDelete: (document: DocumentItem) => void;
+  onDelete: (document: DocumentItem) => void | Promise<void>;
+  onDeleteError: (document: DocumentItem) => void;
   // The one being deleted right now, if any
   deletingId: number | null;
 };
@@ -26,6 +27,7 @@ type DocumentListProps = {
 export function DocumentList({
   documents,
   onDelete,
+  onDeleteError,
   deletingId,
 }: DocumentListProps) {
   const { confirm, confirmDialog } = useConfirm();
@@ -37,7 +39,7 @@ export function DocumentList({
         "The file and its search data are removed. This can't be undone.",
       danger: true,
     });
-    if (yes) onDelete(document);
+    if (yes) await onDelete(document);
   }
 
   if (documents.length === 0) {
@@ -84,7 +86,11 @@ export function DocumentList({
                     variant="danger"
                     aria-label={`Delete ${document.title}`}
                     disabled={deletingId !== null}
-                    onClick={() => askToDelete(document)}
+                    onClick={() => {
+                      void askToDelete(document).catch(() =>
+                        onDeleteError(document),
+                      );
+                    }}
                   >
                     Delete
                   </Button>

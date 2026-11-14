@@ -7,12 +7,17 @@ import { DocumentList } from './document-list.tsx';
 
 function renderList(
   documents: DocumentItem[],
-  { onDelete = vi.fn(), deletingId = null as number | null } = {},
+  {
+    onDelete = vi.fn(),
+    onDeleteError = vi.fn(),
+    deletingId = null as number | null,
+  } = {},
 ) {
   render(
     <DocumentList
       documents={documents}
       onDelete={onDelete}
+      onDeleteError={onDeleteError}
       deletingId={deletingId}
     />,
   );
@@ -99,6 +104,19 @@ describe('DocumentList delete', () => {
 
     expect(onDelete).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('reports a rejected delete callback', async () => {
+    const onDelete = vi.fn().mockRejectedValue(new Error('Delete failed'));
+    const onDeleteError = vi.fn();
+    renderList([handbook], { onDelete, onDeleteError });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete Handbook' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Yes' }));
+
+    expect(onDeleteError).toHaveBeenCalledExactlyOnceWith(handbook);
   });
 
   it('shows which one is deleting and locks the other buttons', () => {
