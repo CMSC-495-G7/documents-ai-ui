@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../common/api/http-client.ts';
+import { deleteDocument } from '../api/delete-document.ts';
 import { listDocuments } from '../api/list-documents.ts';
 import { uploadDocument } from '../api/upload-document.ts';
 import { DocumentList } from '../components/document-list.tsx';
@@ -19,11 +20,18 @@ type Upload =
   | { state: 'done'; name: string }
   | { state: 'error'; message: string };
 
+type Removal =
+  | { state: 'idle' }
+  | { state: 'deleting'; id: number }
+  | { state: 'done'; title: string }
+  | { state: 'error'; title: string };
+
 export function IngestionPage() {
   // null = still loading
   const [documents, setDocuments] = useState<DocumentItem[] | null>(null);
   const [listFailed, setListFailed] = useState(false);
   const [upload, setUpload] = useState<Upload>({ state: 'idle' });
+  const [removal, setRemoval] = useState<Removal>({ state: 'idle' });
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +75,23 @@ export function IngestionPage() {
     }
   }
 
+  async function handleDelete(document: DocumentItem) {
+    setRemoval({ state: 'deleting', id: document.id });
+    try {
+      await deleteDocument(document.id);
+    } catch (error) {
+      // 404 = someone else already deleted it, so it's gone either way
+      if (!(error instanceof ApiError && error.status === 404)) {
+        setRemoval({ state: 'error', title: document.title });
+        return;
+      }
+    }
+    setDocuments((current) =>
+      (current ?? []).filter((item) => item.id !== document.id),
+    );
+    setRemoval({ state: 'done', title: document.title });
+  }
+
   return (
     <section className="ingestion-page">
       <h1>Ingestion</h1>
@@ -97,6 +122,16 @@ export function IngestionPage() {
       )}
 
       <h2>Documents</h2>
+      {removal.state === 'done' && (
+        <p role="status" className="upload-message" data-tone="success">
+          {removal.title} deleted.
+        </p>
+      )}
+      {removal.state === 'error' && (
+        <p role="alert" className="upload-message" data-tone="error">
+          Couldn't delete {removal.title}. Try again.
+        </p>
+      )}
       {listFailed ? (
         <div role="alert" className="upload-message" data-tone="error">
           Couldn't load the documents.{' '}
@@ -113,7 +148,11 @@ export function IngestionPage() {
               Statuses update on their own while files are processed.
             </p>
           )}
-          <DocumentList documents={documents} />
+          <DocumentList
+            documents={documents}
+            onDelete={handleDelete}
+            deletingId={removal.state === 'deleting' ? removal.id : null}
+          />
         </>
       )}
     </section>
