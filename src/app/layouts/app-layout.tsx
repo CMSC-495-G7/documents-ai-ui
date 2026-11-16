@@ -9,7 +9,7 @@ import {
   type MenuSection,
   type NavigateHandler,
 } from '@radixp0int/ai-chat-kit';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { paths } from '../../common/config/paths.ts';
 import { TopBar, type Crumb } from '../../common/top-bar/top-bar.tsx';
@@ -17,6 +17,7 @@ import { TopBarProvider } from '../../common/top-bar/top-bar-slot.tsx';
 import { initials } from '../../common/utils/initials.ts';
 import { useAuth } from '../../features/auth/context/use-auth.ts';
 import type { Role } from '../../features/auth/types.ts';
+import { SettingsDialog } from '../../features/settings/components/settings-dialog.tsx';
 
 type Page = MenuDestination & { adminOnly?: boolean };
 
@@ -52,6 +53,8 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const routeCrumbs = useRouteCrumbs();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   const sections = useMemo(() => menuFor(user?.role), [user?.role]);
   const active = matchDestination(sections, pathname);
@@ -100,6 +103,15 @@ export function AppLayout() {
                       detail: `${user.role === 'admin' ? 'Admin' : 'Employee'} · ${user.workspace.name}`,
                     }}
                     items={[
+                      ...(isAdmin
+                        ? [
+                            {
+                              id: 'settings',
+                              label: 'Settings',
+                              onSelect: () => setSettingsOpen(true),
+                            },
+                          ]
+                        : []),
                       {
                         id: 'sign-out',
                         label: 'Sign out',
@@ -117,6 +129,12 @@ export function AppLayout() {
             </main>
           </div>
         </div>
+        {isAdmin && (
+          <SettingsDialog
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
       </TopBarProvider>
     </NavigateProvider>
   );
