@@ -24,6 +24,22 @@ describe('TopBar', () => {
     );
   });
 
+  it('shows the start content before the breadcrumb', () => {
+    render(
+      <TopBar
+        crumbs={[{ label: 'Chat' }]}
+        start={<button type="button">panel</button>}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'panel' });
+    const crumb = screen.getByText('Chat');
+    // DOCUMENT_POSITION_FOLLOWING: the crumb comes after the button
+    expect(
+      button.compareDocumentPosition(crumb) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('shows the end content on the right', () => {
     render(<TopBar crumbs={[{ label: 'Chat' }]} end={<span>avatar</span>} />);
     expect(screen.getByText('avatar')).toBeInTheDocument();

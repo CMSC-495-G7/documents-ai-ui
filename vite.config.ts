@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: { include: ['react-pdf'] },
   server: {
     // API runs in Docker on 8000, proxy it so we don't need CORS.
     // Set API_PROXY_TARGET if yours runs on another port.

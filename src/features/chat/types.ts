@@ -15,13 +15,22 @@ export type Citation = {
 
 export type AskAnswer = {
   id: number;
+  question: string;
   answer: string;
   // Empty when the app couldn't find a matching excerpt.
   model: string;
   citations: Citation[];
 };
 
-// Keep the document ID and page so the app can open the original file in the future.
+// One row in the history sidebar. The answer comes from GET /api/ask/{id}
+export type HistoryItem = {
+  id: number;
+  question: string;
+  // ISO date, like "2026-11-16T15:42:00Z"
+  created_at: string;
+};
+
+// Keep the document ID and page so the app can open the original file.
 export type CitedSource = Source & {
   documentId: number | null;
   page: number | null;

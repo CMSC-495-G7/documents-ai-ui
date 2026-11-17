@@ -20,6 +20,8 @@ type RequestOptions = {
   auth?: boolean;
   // Uploads only. Called with 0-100 while the body is sent.
   onUploadProgress?: (percent: number) => void;
+  // What we want back. JSON unless it's a file.
+  accept?: string;
 };
 
 const expiredListeners = new Set<() => void>();
@@ -37,6 +39,21 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  const response = await request(path, options);
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return (await response.json()) as T;
+}
+
+// For files (PDF, DOCX). Same token and 401 refresh, but gives back the bytes.
+export async function apiBlob(path: string): Promise<Blob> {
+  const response = await request(path, { accept: '*/*' });
+  return response.blob();
+}
+
+// Sends the request, refreshes once on 401, and throws ApiError if it failed.
+async function request(path: string, options: RequestOptions) {
   const useAuth = options.auth ?? true;
   let response = await send(
     path,
@@ -58,10 +75,7 @@ export async function apiRequest<T>(
   if (!response.ok) {
     throw new ApiError(response.status, await readDetail(response));
   }
-  if (response.status === 204) {
-    return undefined as T;
-  }
-  return (await response.json()) as T;
+  return response;
 }
 
 async function send(
@@ -69,7 +83,9 @@ async function send(
   options: RequestOptions,
   token: string | null,
 ) {
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = {
+    Accept: options.accept ?? 'application/json',
+  };
   // Only these two, both fetch and XHR can send them.
   let body: FormData | string | undefined;
 
