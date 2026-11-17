@@ -40,7 +40,7 @@ describe('main router', () => {
     signedInAs(employeeUser);
     renderWithRouter(routes, '/chat');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Chat' }),
+      await screen.findByRole('textbox', { name: 'Message DocumentsAI' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('navigation', { name: 'Apps' }),

@@ -41,7 +41,7 @@ src/
 │
 ├── features/                   one folder per business capability
 │   ├── auth/                   sign in          → /login
-│   ├── chat/                   ask the assistant → /chat
+│   ├── chat/                   ask the assistant → /chat (POST /api/ask)
 │   ├── ingestion/              add documents     → /ingestion
 │   └── settings/               admin settings    → modal from the account menu
 │

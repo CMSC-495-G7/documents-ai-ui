@@ -13,6 +13,11 @@ npm install
 npm run dev
 ```
 
+To try Chat locally, start the Documents AI API on port 8000. If it runs on a
+different port, set `API_PROXY_TARGET` to the API's base URL before starting Vite.
+Sign in and open **Chat**. Ask about a document that has finished processing, then
+select a numbered source in the answer to read the excerpt.
+
 ## Scripts
 
 | Command              | What it does                        |
