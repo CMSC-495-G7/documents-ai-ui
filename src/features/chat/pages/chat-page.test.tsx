@@ -355,7 +355,8 @@ describe('ChatPage history', () => {
 
     await screen.findByText(/You get 20 days/);
     const newest = await within(await historyList()).findByRole('link', {
-      name: new RegExp(question),
+      // Plain text, not a RegExp: the "?" in the question is a regex symbol
+      name: (name) => name.includes(question),
     });
     expect(newest).toHaveAttribute('href', '/chat/7');
   });

@@ -17,7 +17,10 @@ export function FakeDocumentPreview({
     onLoad?.({ pageCount: kind === 'pdf' ? 4 : undefined });
   }, [kind, onLoad]);
 
-  const type = src instanceof Blob ? src.type : 'not a file';
+  // Not `instanceof Blob`: fetch's Blob (Node) and jsdom's Blob can be
+  // different classes, depending on the Node version
+  const type =
+    typeof src === 'object' && 'type' in src ? src.type : 'not a file';
   return (
     <div role="group" aria-label={`Original document: ${title}`}>
       {kind} preview of {type}
