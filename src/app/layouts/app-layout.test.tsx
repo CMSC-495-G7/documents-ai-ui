@@ -10,6 +10,7 @@ import {
   signedInAs,
 } from '../../testing/auth-fixtures.ts';
 import { renderWithRouter } from '../../testing/render-with-router.tsx';
+import { askSettings } from '../../testing/settings-fixtures.ts';
 import { AppLayout } from './app-layout.tsx';
 
 function renderLayout(page = <p>chat content</p>) {
@@ -118,6 +119,39 @@ describe('AppLayout', () => {
       expect(router.state.location.pathname).toBe(paths.login),
     );
     expect(tokenStorage.getRefresh()).toBeNull();
+  });
+
+  it('opens Settings from the account menu for admins', async () => {
+    signedInAs(adminUser, {
+      'GET /api/ask/settings': { status: 200, body: askSettings },
+    });
+    renderLayout();
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Account: admin@acme.example',
+      }),
+    );
+    await userEvent.click(screen.getByRole('menuitem', { name: /Settings/ }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Settings' });
+    expect(
+      await within(dialog).findByRole('radio', { name: 'OpenAI' }),
+    ).toBeChecked();
+  });
+
+  it('has no Settings for employees', async () => {
+    signedInAs(employeeUser);
+    renderLayout();
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Account: employee@acme.example',
+      }),
+    );
+    expect(
+      screen.queryByRole('menuitem', { name: /Settings/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('lets a page add its own buttons to the top bar', async () => {

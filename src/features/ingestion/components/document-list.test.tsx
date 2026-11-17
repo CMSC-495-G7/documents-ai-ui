@@ -106,6 +106,28 @@ describe('DocumentList delete', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it.each(['close button', 'backdrop'] as const)(
+    'cancels deletion when dismissed via the %s',
+    async (dismissal) => {
+      const onDelete = renderList([handbook]);
+
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Delete Handbook' }),
+      );
+      const dialog = screen.getByRole('dialog', { name: 'Delete Handbook?' });
+      // The native dialog receives backdrop clicks directly.
+      const target =
+        dismissal === 'backdrop'
+          ? dialog
+          : within(dialog).getByRole('button', { name: 'Close dialog' });
+      await userEvent.click(target);
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.getByText('Handbook')).toBeInTheDocument();
+      expect(onDelete).not.toHaveBeenCalled();
+    },
+  );
+
   it('reports a rejected delete callback', async () => {
     const onDelete = vi.fn().mockRejectedValue(new Error('Delete failed'));
     const onDeleteError = vi.fn();
