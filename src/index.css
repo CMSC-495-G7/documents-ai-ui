@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@radixp0int/ai-chat-kit/brand/tokens.css';
 @import '@radixp0int/ai-chat-kit/styles.css';
+@import '@radixp0int/ai-chat-kit/chat.css';
 
 /* Older page css uses these names, so point them at the kit tokens. */
 :root {

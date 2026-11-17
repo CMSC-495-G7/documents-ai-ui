@@ -168,24 +168,6 @@ export function LoginPage() {
           >
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
-
-          <div className="login-divider">or</div>
-
-          <button
-            type="button"
-            className="login-sso"
-            disabled
-            aria-describedby="sso-later"
-          >
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 11h12v9H6z" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-            Continue with company SSO
-            <span id="sso-later" className="login-badge">
-              Coming later
-            </span>
-          </button>
         </form>
 
         <p className="login-footer">

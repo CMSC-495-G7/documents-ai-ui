@@ -1,7 +1,8 @@
 import { vi } from 'vitest';
 
 type Reply = { status: number; body?: unknown };
-type Route = Reply | ((init: RequestInit) => Reply);
+// A function can return a promise, to keep a request waiting.
+type Route = Reply | ((init: RequestInit) => Reply | Promise<Reply>);
 
 export function jsonResponse({ status, body }: Reply) {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -19,7 +20,9 @@ export function mockApi(routes: Record<string, Route>) {
       if (!route) {
         throw new Error(`No mock for ${key}`);
       }
-      return jsonResponse(typeof route === 'function' ? route(init) : route);
+      return jsonResponse(
+        typeof route === 'function' ? await route(init) : route,
+      );
     },
   );
   vi.stubGlobal('fetch', fetchMock);

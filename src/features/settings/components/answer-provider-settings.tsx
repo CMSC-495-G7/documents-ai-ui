@@ -17,15 +17,14 @@ type Save =
   | { state: 'saved'; label: string }
   | { state: 'error'; message: string };
 
-// Who writes the answers in Chat. Works in the Settings panel or on a page.
 export function AnswerProviderSettings() {
   const headingId = useId();
   const [settings, setSettings] = useState<AskSettings | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [choice, setChoice] = useState('');
+  const [draftProvider, setDraftProvider] = useState<string | null>(null);
   const [save, setSave] = useState<Save>({ state: 'idle' });
 
-  // Loads on open, and again when Retry clears loadFailed
+  // Load the settings when the panel opens or the user clicks Retry.
   useEffect(() => {
     if (loadFailed) return;
     let cancelled = false;
@@ -33,7 +32,6 @@ export function AnswerProviderSettings() {
       (loaded) => {
         if (cancelled) return;
         setSettings(loaded);
-        setChoice(loaded.answer_provider);
       },
       () => {
         if (!cancelled) setLoadFailed(true);
@@ -44,22 +42,25 @@ export function AnswerProviderSettings() {
     };
   }, [loadFailed]);
 
-  async function handleSave() {
+  async function handleSave(answerProvider: string) {
     setSave({ state: 'saving' });
     try {
-      const saved = await updateAskSettings(choice);
+      const saved = await updateAskSettings(answerProvider);
       setSettings(saved);
-      setChoice(saved.answer_provider);
+      setDraftProvider(null);
       const provider = saved.providers.find(
         (p) => p.id === saved.answer_provider,
       );
-      setSave({ state: 'saved', label: provider?.label ?? choice });
+      setSave({
+        state: 'saved',
+        label: provider?.label ?? saved.answer_provider,
+      });
     } catch (error) {
       // "Gemini has no API key on the server."
       const message =
         error instanceof ApiError && error.status === 422
           ? error.message
-          : "Couldn't save. Try again.";
+          : "Couldn't save your settings. Try again.";
       setSave({ state: 'error', message });
     }
   }
@@ -83,6 +84,7 @@ export function AnswerProviderSettings() {
   }
 
   const saving = save.state === 'saving';
+  const selectedProvider = draftProvider ?? settings.answer_provider;
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
@@ -91,7 +93,8 @@ export function AnswerProviderSettings() {
           Answers
         </h3>
         <p className="text-[13px] text-ink-soft">
-          Who writes the answers in Chat. Search always uses OpenAI.
+          Choose which AI writes chat answers. OpenAI helps find relevant
+          passages in your documents.
         </p>
       </div>
 
@@ -99,9 +102,9 @@ export function AnswerProviderSettings() {
         name="answer-provider"
         aria-labelledby={headingId}
         orientation="vertical"
-        value={choice}
+        value={selectedProvider}
         onValueChange={(value) => {
-          setChoice(value);
+          setDraftProvider(value);
           setSave({ state: 'idle' });
         }}
         disabled={saving}
@@ -119,7 +122,7 @@ export function AnswerProviderSettings() {
               <FieldLabel htmlFor={id}>{provider.label}</FieldLabel>
               {!provider.available && (
                 <span id={`${id}-hint`} className="text-[13px] text-ink-soft">
-                  No API key on the server
+                  Needs an API key
                 </span>
               )}
             </div>
@@ -131,8 +134,8 @@ export function AnswerProviderSettings() {
         <Button
           variant="primary"
           size="sm"
-          onClick={handleSave}
-          disabled={saving || choice === settings.answer_provider}
+          onClick={() => handleSave(selectedProvider)}
+          disabled={saving || selectedProvider === settings.answer_provider}
         >
           {saving ? 'Saving…' : 'Save'}
         </Button>

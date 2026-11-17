@@ -1,17 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { tokenStorage } from '../../../common/api/token-storage.ts';
-import { mockApi } from '../../../testing/mock-api.ts';
+import { adminUser, signedInAs } from '../../../testing/auth-fixtures.ts';
 import {
   askSettings,
   withProvider,
 } from '../../../testing/settings-fixtures.ts';
 import { AnswerProviderSettings } from './answer-provider-settings.tsx';
 
-function renderSettings(routes: Parameters<typeof mockApi>[0]) {
-  tokenStorage.set({ access: 'access-token', refresh: 'refresh-token' });
-  const fetchMock = mockApi(routes);
+function renderSettings(routes: Parameters<typeof signedInAs>[1]) {
+  const fetchMock = signedInAs(adminUser, routes);
   render(<AnswerProviderSettings />);
   return fetchMock;
 }
@@ -47,7 +45,7 @@ describe('AnswerProviderSettings', () => {
 
     const gemini = await screen.findByRole('radio', { name: 'Gemini' });
     expect(gemini).toBeDisabled();
-    expect(gemini).toHaveAccessibleDescription('No API key on the server');
+    expect(gemini).toHaveAccessibleDescription('Needs an API key');
   });
 
   it('only saves once something changed', async () => {
@@ -110,7 +108,7 @@ describe('AnswerProviderSettings', () => {
     await userEvent.click(saveButton());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "Couldn't save. Try again.",
+      "Couldn't save your settings. Try again.",
     );
   });
 
