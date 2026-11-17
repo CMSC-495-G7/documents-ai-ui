@@ -1,0 +1,6 @@
+/* The top bar's panel button opens and closes the side panel, so hide the
+   kit's own collapse button in the panel heading. The kit has no prop for
+   it, so this matches its label. Check it after a kit update. */
+.app-side-menu button[aria-label='Collapse panel'] {
+  display: none;
+}

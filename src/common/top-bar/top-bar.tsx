@@ -17,15 +17,18 @@ export type Crumb = {
 type TopBarProps = {
   // The last one is the current page.
   crumbs: Crumb[];
+  // Always on the far left, before the breadcrumb. The panel button.
+  start?: ReactNode;
   // Always on the far right, after any page actions.
   end?: ReactNode;
 };
 
-export function TopBar({ crumbs, end }: TopBarProps) {
+export function TopBar({ crumbs, start, end }: TopBarProps) {
   const slot = useTopBarSlot();
 
   return (
     <header className="flex min-h-13 shrink-0 flex-wrap items-center gap-2.5 border-b border-line bg-panel-solid px-7 py-2.5">
+      {start}
       <Breadcrumbs>
         <BreadcrumbList>
           {crumbs.map((crumb, index) => {

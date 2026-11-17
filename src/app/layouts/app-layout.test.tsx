@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { InSideMenu } from '@radixp0int/ai-chat-kit';
 import { describe, expect, it } from 'vitest';
 import { tokenStorage } from '../../common/api/token-storage.ts';
 import { paths } from '../../common/config/paths.ts';
@@ -164,5 +165,108 @@ describe('AppLayout', () => {
 
     const button = await screen.findByRole('button', { name: 'New chat' });
     expect(button.closest('header')).toBeInTheDocument();
+  });
+
+  // jsdom counts as a narrow screen, where the panel starts closed
+  it('shows and hides the side panel from the top bar', async () => {
+    signedInAs(employeeUser);
+    renderLayout();
+    const show = await screen.findByRole('button', {
+      name: 'Show the Chat panel',
+    });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    expect(show.closest('header')).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Chat' })).toBeNull();
+
+    await userEvent.click(show);
+
+    expect(
+      screen.getByRole('complementary', { name: 'Chat' }),
+    ).toBeInTheDocument();
+    const hide = screen.getByRole('button', { name: 'Hide the Chat panel' });
+    expect(hide).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.click(hide);
+
+    expect(screen.queryByRole('complementary', { name: 'Chat' })).toBeNull();
+  });
+
+  it('keeps the top bar button in step with the menu', async () => {
+    signedInAs(employeeUser);
+    renderLayout();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Show the Chat panel' }),
+    );
+
+    // The Chat icon in the rail closes it too
+    await userEvent.click(
+      within(sideMenu()).getByRole('link', { name: 'Chat' }),
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Show the Chat panel' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps the panel open when you come back to Chat', async () => {
+    signedInAs(adminUser);
+    const router = renderLayout();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Show the Chat panel' }),
+    );
+
+    await router.navigate(paths.ingestion);
+    await screen.findByText('upload content');
+    await router.navigate(paths.chat);
+    await screen.findByText('chat content');
+
+    expect(
+      screen.getByRole('complementary', { name: 'Chat' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Hide the Chat panel' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('has no panel button on pages without a panel', async () => {
+    signedInAs(adminUser);
+    const router = renderLayout();
+    await screen.findByText('chat content');
+
+    await router.navigate(paths.ingestion);
+
+    expect(await screen.findByText('upload content')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /the .* panel/ })).toBeNull();
+  });
+
+  it('has a New chat button in the Chat panel', async () => {
+    signedInAs(employeeUser);
+    renderLayout();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Show the Chat panel' }),
+    );
+
+    const panel = screen.getByRole('complementary', { name: 'Chat' });
+    expect(
+      within(panel).getByRole('link', { name: 'New chat' }),
+    ).toHaveAttribute('href', paths.chat);
+  });
+
+  it('gives the chat page a panel in the side menu', async () => {
+    signedInAs(employeeUser);
+    renderLayout(
+      <InSideMenu>
+        <p>recent questions</p>
+      </InSideMenu>,
+    );
+    const chat = await within(
+      await screen.findByRole('navigation', { name: 'Apps' }),
+    ).findByRole('link', { name: 'Chat' });
+    expect(screen.queryByRole('complementary', { name: 'Chat' })).toBeNull();
+
+    await userEvent.click(chat);
+
+    const panel = screen.getByRole('complementary', { name: 'Chat' });
+    expect(within(panel).getByText('recent questions')).toBeInTheDocument();
   });
 });

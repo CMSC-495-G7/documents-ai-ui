@@ -41,7 +41,7 @@ src/
 │
 ├── features/                   one folder per business capability
 │   ├── auth/                   sign in          → /login
-│   ├── chat/                   ask the assistant → /chat (POST /api/ask)
+│   ├── chat/                   ask the assistant → /chat, /chat/:answerId (ask, history, files)
 │   ├── ingestion/              add documents     → /ingestion
 │   └── settings/               admin settings    → modal from the account menu
 │
@@ -129,13 +129,14 @@ Create a folder when its first file arrives; don't scaffold empty ones.
 
 **The sub-router** is `<feature>-routes.tsx`, exporting `<feature>Routes: RouteObject[]`. Its paths
 are **relative** to wherever the main router mounts it — the index route is the feature's base
-path. So `chat-routes.tsx` says `{ index: true }` for `/chat`, and a future
-`{ path: ':conversationId' }` for `/chat/:conversationId`, without ever writing `/chat` itself.
+path. So a sub-router says `{ index: true }` for its base path and `{ path: ':id' }` for
+`<base>/:id`, without ever writing the base path itself. When both show the same page and it must
+stay mounted between them (the chat keeps its history list loaded), use one optional segment:
 
 ```tsx
-// src/features/chat/chat-routes.tsx
+// src/features/chat/chat-routes.tsx: /chat and /chat/12
 export const chatRoutes: RouteObject[] = [
-  { index: true, element: <ChatPage /> },
+  { path: ':answerId?', element: <ChatPage /> },
 ];
 ```
 
@@ -148,7 +149,13 @@ Rules for sub-routers:
    literal and never an import from that feature.
 
 Test a page through its own sub-router, mounted at its real path with `renderWithRouter` from
-`testing/`. Never import `app/router.tsx` from a feature test.
+`testing/`. Never import `app/router.tsx` from a feature test. If the page adds to the top bar or
+the side menu, make `PageShell` from `testing/page-shell.tsx` the parent route's element.
+
+**A page's own menu.** A page that has its own list for the side menu (the chat's recent
+questions) doesn't build a sidebar. `app-layout.tsx` gives it a panel (`panels` on the kit's
+`SideMenu`), and the page draws into it with the kit's `<InSideMenu>`. The list stays a normal
+part of the page, with its own state and requests, so no feature imports another.
 
 If two features want the same code, read §5 before moving anything.
 

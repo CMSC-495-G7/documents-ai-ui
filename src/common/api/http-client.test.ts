@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { headersOf, mockApi } from '../../testing/mock-api.ts';
-import { apiRequest, onSessionExpired } from './http-client.ts';
+import { fileResponse, headersOf, mockApi } from '../../testing/mock-api.ts';
+import { apiBlob, apiRequest, onSessionExpired } from './http-client.ts';
 import { tokenStorage } from './token-storage.ts';
 
 const unauthorized = { status: 401, body: { detail: 'Unauthorized' } };
@@ -144,5 +144,69 @@ describe('apiRequest with upload progress', () => {
   it('uses status 0 when the server cannot be reached', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(upload(() => {})).rejects.toMatchObject({ status: 0 });
+  });
+});
+
+describe('apiBlob', () => {
+  const pdf = 'application/pdf';
+
+  it('returns the file with its type and sends the token', async () => {
+    tokenStorage.set({ access: 'a1', refresh: 'r1' });
+    const fetchMock = mockApi({
+      'GET /api/files/1': () => fileResponse('%PDF-1.7', pdf),
+    });
+
+    const file = await apiBlob('/api/files/1');
+
+    expect(file.type).toBe(pdf);
+    expect(await file.text()).toBe('%PDF-1.7');
+    expect(headersOf(fetchMock, 0).Authorization).toBe('Bearer a1');
+    expect(headersOf(fetchMock, 0).Accept).toBe('*/*');
+  });
+
+  it('refreshes once on 401 and gets the file again', async () => {
+    tokenStorage.set({ access: 'old', refresh: 'r1' });
+    const fetchMock = mockApi({
+      'GET /api/files/1': (init) =>
+        (init.headers as Record<string, string>).Authorization === 'Bearer new'
+          ? fileResponse('%PDF-1.7', pdf)
+          : unauthorized,
+      'POST /api/auth/refresh': { status: 200, body: { access: 'new' } },
+    });
+
+    const file = await apiBlob('/api/files/1');
+
+    expect(await file.text()).toBe('%PDF-1.7');
+    expect(tokenStorage.getAccess()).toBe('new');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('ends the session when the refresh token is rejected', async () => {
+    tokenStorage.set({ access: 'old', refresh: 'r1' });
+    mockApi({
+      'GET /api/files/1': unauthorized,
+      'POST /api/auth/refresh': unauthorized,
+    });
+    const expired = vi.fn();
+    const stopListening = onSessionExpired(expired);
+
+    await expect(apiBlob('/api/files/1')).rejects.toMatchObject({
+      status: 401,
+    });
+    expect(expired).toHaveBeenCalledOnce();
+    stopListening();
+  });
+
+  it('uses the API detail as the error message', async () => {
+    mockApi({
+      'GET /api/files/9': {
+        status: 404,
+        body: { detail: 'Document not found.' },
+      },
+    });
+    await expect(apiBlob('/api/files/9')).rejects.toMatchObject({
+      status: 404,
+      message: 'Document not found.',
+    });
   });
 });
